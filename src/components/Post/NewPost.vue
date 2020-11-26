@@ -120,5 +120,118 @@
 
 <script>
 export default {
+  data: function () {
+    return {
+      categoriesId: '',
+      categoriesName: '',
+      isActive: false,
+      slugs: '',
+      loading: false,
+      isError: '',
+      Categories:[],
+      AddUpdate: 'A'
+    }
+  },
+  methods:{
+    clear_data(){
+      this.categoriesId= '',
+      this.categoriesName= '',
+      this.isActive= false,
+      this.slugs= '',
+      this.loading= false,
+      this.isError= '',
+      this.AddUpdate = 'A'
+    },
+    save_categories(){
+      if(this.AddUpdate == 'A' && this.categoriesId ==0){
+        this.add_categories();
+      }else if(this.AddUpdate == 'E' && this.categoriesId != 0){
+        this.update_categories();
+      }
+    },
+    add_categories(){
+        if(this.categoriesId.length != 0) return;
+        if(this.AddUpdate == 'E') return;
+        if(this.categoriesName.length == 0 || this.slugs.length == 0) return
+        this.loading = true;
+        let parms = {
+          categoriesId  : 0,
+          categoriesName  : this.categoriesName,
+          isActive: this.isActive == true ? "active": "deactive",
+          slugs: this.slugs
+        }
+        axios
+          .post('http://localhost:3001/app/v1/post/categories',parms)
+          .then(response => {
+            if(response.status == 200 && response.statusText == 'OK'){
+              this.loading = false;
+              this.clear_data();
+              alert("Successfully Added");
+              this.get_categories();
+            }
+          })
+        .catch(error => {
+          console.log(error);
+          this.loading = false;
+          this.isError = 'Something gone error!! please try again'
+          alert(this.isError);
+        })
+        .finally(() => this.loading = false)
+    },
+    update_categories(){
+        if(this.AddUpdate == 'A') return;
+        if(this.categoriesId.length == 0) return;
+        if(this.categoriesName.length == 0 || this.slugs.length == 0) return
+        this.loading = true;
+        let parms = {
+          categoriesId  : 0,
+          categoriesName  : this.categoriesName,
+          isActive: this.isActive == true ? "active": "deactive",
+          slugs: this.slugs
+        }
+        axios
+          .put(`http://localhost:3001/app/v1/post/categories/`+this.categoriesId,parms)
+          .then(response => {
+            if(response.status == 200 && response.statusText == 'OK'){
+              this.loading = false;
+              this.clear_data();
+              alert("Successfully updated");
+              this.get_categories();
+            }
+          })
+        .catch(error => {
+          console.log(error);
+          this.loading = false;
+          this.isError = 'Something gone error!! please try again'
+          alert(this.isError);
+        })
+        .finally(() => this.loading = false)
+    },
+    get_categories(){
+        axios
+          .get('http://localhost:3001/app/v1/post/categories')
+          .then(response => {
+            if(response.status == 200 && response.statusText == 'OK'){
+              this.Categories = response.data;
+            }
+          })
+        .catch(error => {
+          console.log(error);
+          this.isError = 'Something gone error!! please try again'
+          alert(this.isError);
+        })
+    },
+    update_Categories(data){
+      this.clear_data();
+      this.categoriesId= data.CategoriesID;
+      this.categoriesName = data.CategoriesName;
+      this.slugs = data.Slugs;
+      this.isActive= data.IsActive == 'active' ? true: false
+      this.AddUpdate = 'E'
+    }
+  },
+  mounted: function(){
+    this.get_categories();
+  }
 }
 </script>

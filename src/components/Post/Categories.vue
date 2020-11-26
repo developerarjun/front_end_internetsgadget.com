@@ -29,30 +29,31 @@
               </div>
               <!-- /.card-header -->
               <!-- form start -->
-              <form>
                 <div class="card-body">
                   <div class="form-group">
                     <label for="exampleInputEmail1">Categories Tag</label>
-                    <input type="text" class="form-control"  placeholder="Enter Categories Name">
+                    <input type="text" class="form-control" v-model="categoriesName" placeholder="Enter Categories Name">
                   </div>
                   <div class="form-group">
                     <label for="exampleInputPassword1">slug</label>
-                    <input type="text" class="form-control" placeholder="enter-categories-name">
+                    <input type="text" class="form-control" v-model="slugs" placeholder="enter-categories-name">
                   </div>
                   <div class="form-group">
                     <label for="exampleInputFile">Status</label>
                     <div class="input-group">
                        <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                    <input type="checkbox" class="form-check-input" v-model="isActive" id="exampleCheck1">
                     <label class="form-check-label" for="exampleCheck1">Active</label>
                   </div>
                     </div>
                   </div>
                 </div>
                 <div class="card-footer">
-                  <button type="submit" class="btn btn-primary">Add</button>
+                  <button class="btn btn-primary" @click="save_categories">Add</button>
                 </div>
-              </form>
+                <div v-if="loading">
+                  <p>Saving.....</p>
+                </div>
             </div>
           </div>
         </div>
@@ -83,10 +84,10 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>183</td>
-                      <td>John Doe</td>
-                      <td>11-7-2014</td>
+                    <tr v-for="(categories,index) in Categories" :key="index+1">
+                      <td>{{ index+1 }}</td>
+                      <td>{{ categories.CategoriesName }}</td>
+                      <td><i class="nav-icon fas fa-search" title="Click here to update" @click="update_Categories(categories)"></i></td>
                     </tr>
                   </tbody>
                 </table>
@@ -101,3 +102,122 @@
     </section>
   </div>
 </template>
+<script>
+import axios from 'axios';
+axios.defaults.withCredentials = true;
+export default {
+  data: function () {
+    return {
+      categoriesId: '',
+      categoriesName: '',
+      isActive: false,
+      slugs: '',
+      loading: false,
+      isError: '',
+      Categories:[],
+      AddUpdate: 'A'
+    }
+  },
+  methods:{
+    clear_data(){
+      this.categoriesId= '',
+      this.categoriesName= '',
+      this.isActive= false,
+      this.slugs= '',
+      this.loading= false,
+      this.isError= '',
+      this.AddUpdate = 'A'
+    },
+    save_categories(){
+      if(this.AddUpdate == 'A' && this.categoriesId ==0){
+        this.add_categories();
+      }else if(this.AddUpdate == 'E' && this.categoriesId != 0){
+        this.update_categories();
+      }
+    },
+    add_categories(){
+        if(this.categoriesId.length != 0) return;
+        if(this.AddUpdate == 'E') return;
+        if(this.categoriesName.length == 0 || this.slugs.length == 0) return
+        this.loading = true;
+        let parms = {
+          categoriesId  : 0,
+          categoriesName  : this.categoriesName,
+          isActive: this.isActive == true ? "active": "deactive",
+          slugs: this.slugs
+        }
+        axios
+          .post('http://localhost:3001/app/v1/post/categories',parms)
+          .then(response => {
+            if(response.status == 200 && response.statusText == 'OK'){
+              this.loading = false;
+              this.clear_data();
+              alert("Successfully Added");
+              this.get_categories();
+            }
+          })
+        .catch(error => {
+          console.log(error);
+          this.loading = false;
+          this.isError = 'Something gone error!! please try again'
+          alert(this.isError);
+        })
+        .finally(() => this.loading = false)
+    },
+    update_categories(){
+        if(this.AddUpdate == 'A') return;
+        if(this.categoriesId.length == 0) return;
+        if(this.categoriesName.length == 0 || this.slugs.length == 0) return
+        this.loading = true;
+        let parms = {
+          categoriesId  : 0,
+          categoriesName  : this.categoriesName,
+          isActive: this.isActive == true ? "active": "deactive",
+          slugs: this.slugs
+        }
+        axios
+          .put(`http://localhost:3001/app/v1/post/categories/`+this.categoriesId,parms)
+          .then(response => {
+            if(response.status == 200 && response.statusText == 'OK'){
+              this.loading = false;
+              this.clear_data();
+              alert("Successfully updated");
+              this.get_categories();
+            }
+          })
+        .catch(error => {
+          console.log(error);
+          this.loading = false;
+          this.isError = 'Something gone error!! please try again'
+          alert(this.isError);
+        })
+        .finally(() => this.loading = false)
+    },
+    get_categories(){
+        axios
+          .get('http://localhost:3001/app/v1/post/categories')
+          .then(response => {
+            if(response.status == 200 && response.statusText == 'OK'){
+              this.Categories = response.data;
+            }
+          })
+        .catch(error => {
+          console.log(error);
+          this.isError = 'Something gone error!! please try again'
+          alert(this.isError);
+        })
+    },
+    update_Categories(data){
+      this.clear_data();
+      this.categoriesId= data.CategoriesID;
+      this.categoriesName = data.CategoriesName;
+      this.slugs = data.Slugs;
+      this.isActive= data.IsActive == 'active' ? true: false
+      this.AddUpdate = 'E'
+    }
+  },
+  mounted: function(){
+    this.get_categories();
+  }
+}
+</script>
